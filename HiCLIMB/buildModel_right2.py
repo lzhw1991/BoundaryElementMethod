@@ -9,7 +9,7 @@ def prePar(fpar, distance, topography, moho, nrec):
     context = \
         ['This is a parameter file for a 2-layer model with free-surface\n',
          '2 1 6 1 64.0 0.008 20 0.1 4007\n',
-         '2.0 1.0 0.0 3.0 2 2\n',
+         '2.0 1.0 0.0 3.0 1 1\n',
          '2 11822.0 30385.0 3 5.0 90.0 0.0\n',
          str(nrec)+'\n',
          'init\n',
@@ -19,8 +19,6 @@ def prePar(fpar, distance, topography, moho, nrec):
     domain1 = ['domain 1 2.6 5.8 3.2 ' + str(2 * nelement) + '\n',
                '1 ' + str(nelement) + ' ' + str(nelement + 1)
                + ' ' + str(2 * nelement) + '\n']
-    print nelement
-    print domain1
     for line in context:
         fp.write(line)
     for line in domain1:
@@ -76,50 +74,34 @@ plt.xlim([distance[0], distance[-1]])
 # plt.ylim([0, 50])
 # plt.axis('imag')
 
-dxSrc = 2  # km
+dxSrc = 1  # km
 interpDistance = np.arange(distance[0], distance[-1], dxSrc)
-#interpDistance = np.append(interpDistance, distance)
-#interpDistance = np.unique(interpDistance)
-#interpDistance.sort()
-
 #interpDistance = np.arange(200.0, 280, dxSrc)
-
-topography = LAYER0 - topography
 
 f = interpolate.interp1d(distance, topography, kind='slinear')
 interpTopography = f(interpDistance)
 interpTopography = interpTopography
 
-#interpTopography = LAYER0 - interpTopography
+interpTopography = LAYER0 - interpTopography
 
-print 'min and max of x: ', distance[0], distance[-1]
+print distance[0], distance[-1]
 
-dist1 = np.arange(np.floor(distance[0]), 190)
-dist2 = np.arange(220, np.ceil(distance[-1])+1)
+dist1 = np.arange(distance[0], 190)
+dist2 = np.arange(220, distance[-1])
 depth1 = dist1 * 0 + 40 + LAYER0
 depth2 = dist2 * 0 + 70 + LAYER0
 distMoho = np.append(dist1, dist2)
 depthMoho = np.append(depth1, depth2)
-# print distance
-# print distMoho.max()
-# print interpDistance.max()
 fMoho = interpolate.interp1d(distMoho, depthMoho, kind='cubic')
-#interpMoho = fMoho(interpDistance)
-Moho = fMoho(distance)
+interpMoho = fMoho(interpDistance)
 
-#prePar('ebem.dat', interpDistance, interpTopography, interpMoho, len(interpTopography))
-#preReceivers('receiver.dat', interpDistance, interpTopography)
-#prePar('ebem.dat', interpDistance, interpTopography, interpMoho, len(interpTopography))
-prePar('ebem.dat', distance, topography, Moho, len(topography[1:-1]))
-preReceivers('receiver.dat', distance[1:-1], topography[1:-1])
-#preReceivers('receiver.dat', interpDistance, interpTopography)
+prePar('ebem.dat', interpDistance, interpTopography, interpMoho, len(interpTopography))
+preReceivers('receiver.dat', interpDistance, interpTopography)
 
 plt.figure()
-#plt.plot(interpDistance, interpTopography, 'x')
-plt.plot(distance, topography, 'x')
+plt.plot(interpDistance, interpTopography, 'x')
 plt.hold('True')
-#plt.plot(interpDistance, interpMoho)
-plt.plot(distance, Moho)
+plt.plot(interpDistance, interpMoho)
 plt.axis('image')
 plt.xlim([interpDistance[0], interpDistance[-1]])
 plt.ylim([LAYER0 - 10, 140])
